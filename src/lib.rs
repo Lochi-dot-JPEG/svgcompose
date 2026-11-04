@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+use itertools::Itertools;
+use std::collections::{HashMap, hash_map::Keys};
 
 const OPENING_TAG: &str = "svg";
 const OPENING_TAG_ATTRIBUTE: (&str, &str) = ("xmlns", "http://www.w3.org/2000/svg");
@@ -14,8 +15,15 @@ impl Attributes {
         }
     }
 
-    pub fn get(&mut self, name: &str) -> Option<&String> {
+    pub fn get(&self, name: &str) -> Option<&String> {
         return self.attributes.get(name);
+    }
+    pub fn keys<'a>(&'a self) -> Keys<'a, String, String> {
+        return self.attributes.keys();
+    }
+    pub fn keys_sorted<'a>(&'a self) -> Vec<&String> {
+        let keys: Vec<&String> = self.attributes.keys().sorted_unstable().collect();
+        return keys;
     }
     pub fn add(&mut self, name: &str, value: impl std::fmt::Display) {
         self.attributes
@@ -25,24 +33,49 @@ impl Attributes {
 
 pub struct Element {
     name: String,
+    container_tag: bool,
     attributes: Attributes,
     children: Vec<Element>,
 }
 
 impl Element {
-    pub fn new(name: String, attributes: Option<Attributes>) -> Element {
+    pub fn new(name: String, attributes: Option<Attributes>, container_tag: bool) -> Element {
         match attributes {
             Some(e) => Element {
                 name,
+                container_tag,
                 attributes: e,
                 children: Vec::new(),
             },
             None => Element {
                 name,
+                container_tag,
                 attributes: Attributes::new(),
                 children: Vec::new(),
             },
         }
+    }
+
+    fn render_to_string(&mut self) -> String {
+        let mut s = format!("<{}", self.name);
+        for a in self.attributes.keys_sorted() {
+            let item = self.attributes.get(&a);
+            match item {
+                Some(e) => {
+                    s.push(' ');
+                    s.push_str(&a);
+                    s.push_str("=\"");
+                    s.push_str(e);
+                    s.push('"');
+                }
+                None => (),
+            }
+        }
+        s.push('>');
+        s.push_str("\n</");
+        s.push_str(&self.name);
+        s.push_str(">");
+        return s;
     }
 
     pub fn add_child(&mut self, child: Element) {
@@ -58,7 +91,7 @@ impl File {
     pub fn new() -> File {
         let mut root_attr = Attributes::new();
         root_attr.add(OPENING_TAG_ATTRIBUTE.0, OPENING_TAG_ATTRIBUTE.1);
-        let root = Element::new(OPENING_TAG.to_string(), Some(root_attr));
+        let root = Element::new(OPENING_TAG.to_string(), Some(root_attr), true);
         File { root }
     }
 
@@ -68,10 +101,13 @@ impl File {
     pub fn height(&mut self, h: u32) {
         self.root.attributes.add("height", h);
     }
-    pub fn size(self, w: u32, h: u32) {}
+    pub fn size(&mut self, w: u32, h: u32) {
+        self.height(h);
+        self.width(w);
+    }
 
-    pub fn render(self) -> String {
-        String::from("")
+    pub fn render(&mut self) -> String {
+        return self.root.render_to_string();
     }
 }
 
@@ -109,8 +145,8 @@ mod tests {
         result.width(100);
         result.height(600);
 
-        const MINIMAL_RENDER: &str =
-            "<svg width=\"100\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\">\n</svg>";
+        const MINIMAL_RENDER: &str = r#"<svg height="600" width="100" xmlns="http://www.w3.org/2000/svg">
+</svg>"#;
         assert_eq!(result.render(), MINIMAL_RENDER);
     }
 }
