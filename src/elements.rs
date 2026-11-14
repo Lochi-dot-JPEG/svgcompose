@@ -1,17 +1,72 @@
-use crate::{Attributes, Element};
+use crate::Attributes;
 
-use crate::units::Measure;
+use crate::units::{Measure, Rect};
 
-pub struct Rect {
-    x: Measure,
-    y: Measure,
-    w: Measure,
-    h: Measure,
+pub struct Element {
+    pub name: String,
+    pub container: bool,
+    pub attributes: Attributes,
+    children: Vec<Element>,
 }
 
-impl Rect {
-    pub fn new(x: Measure, y: Measure, w: Measure, h: Measure) -> Rect {
-        Rect { x, y, w, h }
+impl Element {
+    pub fn new(name: String, attributes: Option<Attributes>, container: bool) -> Element {
+        match attributes {
+            Some(e) => Element {
+                name,
+                container,
+                attributes: e,
+                children: Vec::new(),
+            },
+            None => Element {
+                name,
+                container,
+                attributes: Attributes::new(),
+                children: Vec::new(),
+            },
+        }
+    }
+
+    pub fn render_to_string(&mut self) -> String {
+        let mut s = format!("<{}", self.name);
+        for a in self.attributes.keys_sorted() {
+            let item = self.attributes.get(&a);
+            match item {
+                Some(e) => {
+                    s.push(' ');
+                    s.push_str(&a);
+                    s.push_str("=\"");
+                    s.push_str(e);
+                    s.push('"');
+                }
+                None => (),
+            }
+        }
+        if !self.container {
+            s.push_str("/>");
+        } else {
+            s.push('>');
+
+            for element in &mut self.children {
+                let render = element.render_to_string();
+                s.push('\n');
+                s.push_str(&render);
+            }
+            if !self.children.is_empty() {
+                s.push('\n');
+            }
+            s.push_str("</");
+            s.push_str(&self.name);
+            s.push_str(">");
+        }
+        return s;
+    }
+
+    pub fn add_child(&mut self, child: Element) {
+        if !self.container {
+            panic!("Can't add child without being a container")
+        }
+        self.children.push(child);
     }
 }
 

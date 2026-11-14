@@ -1,13 +1,14 @@
 use itertools::Itertools;
-use std::{
-    collections::{HashMap, hash_map::Keys},
-    println,
-};
+use std::collections::{HashMap, hash_map::Keys};
 
 mod elements;
 mod units;
 use elements::*;
-use units::Measure::{Pc, Px};
+
+pub use units::{
+    Measure::{Pc, Px},
+    Rect,
+};
 
 const OPENING_TAG: &str = "svg";
 const OPENING_TAG_ATTRIBUTE: (&str, &str) = ("xmlns", "http://www.w3.org/2000/svg");
@@ -36,70 +37,6 @@ impl Attributes {
     pub fn add(&mut self, name: &str, value: impl std::fmt::Display) {
         self.attributes
             .insert(String::from(name), format!("{value}"));
-    }
-}
-
-pub struct Element {
-    name: String,
-    container_tag: bool,
-    attributes: Attributes,
-    children: Vec<Element>,
-}
-
-impl Element {
-    pub fn new(name: String, attributes: Option<Attributes>, container_tag: bool) -> Element {
-        match attributes {
-            Some(e) => Element {
-                name,
-                container_tag,
-                attributes: e,
-                children: Vec::new(),
-            },
-            None => Element {
-                name,
-                container_tag,
-                attributes: Attributes::new(),
-                children: Vec::new(),
-            },
-        }
-    }
-
-    fn render_to_string(&mut self) -> String {
-        let mut s = format!("<{}", self.name);
-        for a in self.attributes.keys_sorted() {
-            let item = self.attributes.get(&a);
-            match item {
-                Some(e) => {
-                    s.push(' ');
-                    s.push_str(&a);
-                    s.push_str("=\"");
-                    s.push_str(e);
-                    s.push('"');
-                }
-                None => (),
-            }
-        }
-        s.push('>');
-
-        for element in &mut self.children {
-            let render = element.render_to_string();
-            s.push('\n');
-            s.push_str(&render);
-        }
-        if !self.children.is_empty() {
-            s.push('\n');
-        }
-        s.push_str("</");
-        s.push_str(&self.name);
-        s.push_str(">");
-        return s;
-    }
-
-    pub fn add_child(&mut self, child: Element) {
-        if !self.container_tag {
-            panic!("Can't add child without container tag")
-        }
-        self.children.push(child);
     }
 }
 
@@ -171,8 +108,8 @@ mod tests {
         result.width(100);
         result.height(600);
 
-        const MINIMAL_RENDER: &str = r#"<svg height="600" width="100" xmlns="http://www.w3.org/2000/svg">
-</svg>"#;
+        const MINIMAL_RENDER: &str =
+            r#"<svg height="600" width="100" xmlns="http://www.w3.org/2000/svg"></svg>"#;
         assert_eq!(result.render(), MINIMAL_RENDER);
     }
 
@@ -186,7 +123,7 @@ mod tests {
         file.append_element(rectangle.to_element());
 
         const MINIMAL_RENDER: &str = r#"<svg height="600" width="100" xmlns="http://www.w3.org/2000/svg">
-<rect></rect>
+<rect height="4%" width="3%" x="1" y="2"/>
 </svg>"#;
         assert_eq!(file.render(), MINIMAL_RENDER);
     }
