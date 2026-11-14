@@ -1,0 +1,5 @@
+SVG Compose is a Rust crate made for composing SVG files and rendering them to XML easily.
+
+Copyright 2026 Lochi
+
+Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE, Version 3.0 
