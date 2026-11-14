@@ -9,6 +9,18 @@ pub struct Element {
     children: Vec<Element>,
 }
 
+pub struct Color {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+}
+
+impl Color {
+    pub fn hex(&self) -> String {
+        format!("#{:02x?}{:02x?}{:02x?}", self.r, self.g, self.b)
+    }
+}
+
 impl Element {
     pub fn new(name: String, attributes: Option<Attributes>, container: bool) -> Element {
         match attributes {
@@ -72,11 +84,21 @@ impl Element {
 
 pub struct Rectangle {
     bounds: Rect,
+    fill: Color,
 }
 
 impl Rectangle {
     pub fn new(bounds: Rect) -> Rectangle {
-        Rectangle { bounds }
+        Rectangle {
+            bounds,
+            fill: Color { r: 0, g: 0, b: 0 },
+        }
+    }
+    pub fn fill(self, color: Color) -> Rectangle {
+        Rectangle {
+            fill: color,
+            ..self
+        }
     }
     pub fn to_element(&self) -> Element {
         let mut attr = Attributes::new();
@@ -84,6 +106,7 @@ impl Rectangle {
         attr.add("y", &self.bounds.y);
         attr.add("width", &self.bounds.w);
         attr.add("height", &self.bounds.h);
+        attr.add("fill", &self.fill.hex());
         Element::new(String::from("rect"), Some(attr), false)
     }
 }

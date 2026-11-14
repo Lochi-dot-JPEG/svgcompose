@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use std::collections::{HashMap, hash_map::Keys};
 
-mod elements;
+pub mod elements;
 mod units;
 use elements::*;
 
@@ -119,12 +119,16 @@ mod tests {
         file.width(100);
         file.height(600);
         let rect = Rect::new(Px(1.), Px(2.), Pc(3.), Pc(4.));
-        let rectangle = Rectangle::new(rect);
+        let rectangle = Rectangle::new(rect).fill(Color {
+            r: 255,
+            g: 0,
+            b: 128,
+        });
         file.append_element(rectangle.to_element());
 
-        const MINIMAL_RENDER: &str = r#"<svg height="600" width="100" xmlns="http://www.w3.org/2000/svg">
-<rect height="4%" width="3%" x="1" y="2"/>
-</svg>"#;
+        const MINIMAL_RENDER: &str = r##"<svg height="600" width="100" xmlns="http://www.w3.org/2000/svg">
+<rect fill="#ff0080" height="4%" width="3%" x="1" y="2"/>
+</svg>"##;
         assert_eq!(file.render(), MINIMAL_RENDER);
     }
 
